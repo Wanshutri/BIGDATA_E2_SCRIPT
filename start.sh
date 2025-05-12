@@ -15,18 +15,7 @@ export GCP_PROJECT_ID="$PROJECT_ID"
 export API_KEY="$API_KEY"
 export TOPIC_ID="$TOPIC_ID"
 export BUCKET_NAME="$BUCKET_NAME"
-
-# Obtener zona y región actuales
-ZONE=$(gcloud config get-value compute/zone 2>/dev/null)
-REGION=$(gcloud config get-value compute/region 2>/dev/null)
-
-# Si no hay región, derivarla de la zona
-if [ -z "$REGION" ] && [ -n "$ZONE" ]; then
-  REGION=$(echo "$ZONE" | sed 's/-[a-z]$//')
-fi
-
-export GCP_ZONE="$ZONE"
-export GCP_REGION="$REGION"
+export GCP_REGION="us-central1"
 
 # Mostrar información
 echo "========================================="
@@ -36,7 +25,6 @@ echo "GCP_PASSWORD=[oculto]"
 echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
 echo "API_KEY=$API_KEY"
 echo "TOPIC_ID=$TOPIC_ID"
-echo "GCP_ZONE=$GCP_ZONE"
 echo "GCP_REGION=$GCP_REGION"
 echo "========================================="
 
