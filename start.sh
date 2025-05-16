@@ -32,6 +32,9 @@ echo "========================================="
 echo "Creando bucket '$BUCKET_NAME' en la región '$GCP_REGION'..."
 gsutil mb -l "$GCP_REGION" -p "$GCP_PROJECT_ID" "gs://$BUCKET_NAME/"
 
+# Esperar subida de .parquet manualmente
+read -p "Por favor, sube el archivo .parquet al bucket '$BUCKET_NAME' y presiona Enter para continuar..."
+
 # Crear el topic
 echo "Creando el topic '$TOPIC_ID' en el proyecto '$GCP_PROJECT_ID'..."
 gcloud pubsub topics create "$TOPIC_ID" --project="$GCP_PROJECT_ID"
@@ -42,13 +45,13 @@ docker build -t taxi-ingesta ./container
 
 # Ejecutar contenedor en segundo plano
 echo "Ejecutando contenedor en segundo plano..."
-docker run -d -p 8080:8080 \
+docker run -d -p 8000:8000 \
   -e API_KEY="$API_KEY" \
   -e GCP_PROJECT_ID="$GCP_PROJECT_ID" \
   -e TOPIC_ID="$TOPIC_ID" \
   taxi-ingesta
 
-echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8080"
+echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8000"
 
 # Etiquetar la imagen para subir a Google Container Registry
 docker tag taxi-ingesta gcr.io/$GCP_PROJECT_ID/taxi-ingesta:v1
