@@ -1,5 +1,8 @@
 #!/bin/bash
 
+gcloud auth application-default login
+read -p "Por favor, termina la autenticacion y presiona Enter para continuar..."
+
 # Solicitar al usuario los valores
 read -p "Ingrese el Username: " USERNAME
 read -p "Ingrese el Password: " PASSWORD
@@ -11,7 +14,8 @@ read -p "Ingrese el nombre del bucket a crear (debe ser único globalmente): " B
 export GCP_USERNAME="$USERNAME"
 export GCP_PASSWORD="$PASSWORD"
 export GCP_PROJECT_ID="$PROJECT_ID"
-export TOPIC_ID="projects/$GCP_PROJECT_ID/topics/$TOPIC_ID"
+export TOPIC_NAME="$TOPIC_ID"
+export TOPIC_ID="projects/$GCP_PROJECT_ID/topics/$TOPIC_NAME"
 export BUCKET_NAME="$BUCKET_NAME"
 export GCP_REGION="us-central1"
 
@@ -35,7 +39,7 @@ read -p "Por favor, sube el archivo .parquet al bucket '$BUCKET_NAME' y presiona
 
 # Crear el topic
 echo "Creando el topic '$TOPIC_ID' en el proyecto '$GCP_PROJECT_ID'..."
-gcloud pubsub topics create "$TOPIC_ID" --project="$GCP_PROJECT_ID"
+gcloud pubsub topics create "$TOPIC_NAME" --project="$GCP_PROJECT_ID"
 
 # Construir imagen Docker
 echo "Construyendo imagen Docker..."
@@ -44,8 +48,8 @@ docker build -t taxi-ingesta ./container
 # Ejecutar contenedor en segundo plano
 echo "Ejecutando contenedor en segundo plano..."
 docker run -d -p 8000:8000 \
-  -e GCP_PROJECT_ID="$GCP_PROJECT_ID" \
   -e TOPIC_ID="$TOPIC_ID" \
+  -e BUCKET_NAME="$BUCKET_NAME" \
   taxi-ingesta
 
 echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8000"
