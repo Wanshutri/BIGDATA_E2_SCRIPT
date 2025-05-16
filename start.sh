@@ -46,13 +46,13 @@ echo "Construyendo imagen Docker..."
 docker build -t taxi-ingesta ./container
 
 # Ejecutar contenedor en segundo plano
-echo "Ejecutando contenedor en segundo plano..."
-docker run -d -p 8000:8000 \
-  -e TOPIC_ID="$TOPIC_ID" \
-  -e BUCKET_NAME="$BUCKET_NAME" \
-  taxi-ingesta
+#echo "Ejecutando contenedor en segundo plano..."
+#docker run -d -p 8000:8000 \
+#  -e TOPIC_ID="$TOPIC_ID" \
+#  -e BUCKET_NAME="$BUCKET_NAME" \
+#  taxi-ingesta
 
-echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8000"
+#echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8000"
 
 # Etiquetar la imagen para subir a Google Container Registry
 docker tag taxi-ingesta gcr.io/$GCP_PROJECT_ID/taxi-ingesta:v1
@@ -63,3 +63,23 @@ gcloud run deploy taxi-ingesta \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated
+
+# Obtener la URL del servicio desplegado
+CLOUD_RUN_URL=$(gcloud run services describe taxi-ingesta \
+  --platform managed \
+  --region "$GCP_REGION" \
+  --format='value(status.url)')
+
+echo "URL del servicio Cloud Run: $CLOUD_RUN_URL"
+
+# Crear una suscripción push al tópico
+SUBSCRIPTION_NAME="taxi-ingesta-sub"
+echo "Creando suscripción push '$SUBSCRIPTION_NAME' al tópico '$TOPIC_ID'..."
+
+gcloud pubsub subscriptions create "$SUBSCRIPTION_NAME" \
+  --topic="$TOPIC_NAME" \
+  --push-endpoint="$CLOUD_RUN_URL" \
+  --push-auth-level=anonymous \
+  --project="$GCP_PROJECT_ID"
+
+echo "Suscripción creada y conectada a Cloud Run. Pub/Sub enviará eventos a $CLOUD_RUN_URL"
