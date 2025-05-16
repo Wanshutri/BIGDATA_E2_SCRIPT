@@ -25,7 +25,6 @@ echo "Variables de entorno configuradas:"
 echo "GCP_USERNAME=$GCP_USERNAME"
 echo "GCP_PASSWORD=[oculto]"
 echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
-echo "API_KEY=$API_KEY"
 echo "TOPIC_ID=$TOPIC_ID"
 echo "BUCKET_NAME=$BUCKET_NAME"
 echo "GCP_REGION=$GCP_REGION"
@@ -47,15 +46,18 @@ docker build -t taxi-ingesta ./container
 
 # Ejecutar contenedor en segundo plano
 #echo "Ejecutando contenedor en segundo plano..."
-#docker run -d -p 8000:8000 \
+#docker run -d -p 8080:8080 \
 #  -e TOPIC_ID="$TOPIC_ID" \
 #  -e BUCKET_NAME="$BUCKET_NAME" \
 #  taxi-ingesta
 
-#echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8000"
+#echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8080"
 
 # Etiquetar la imagen para subir a Google Container Registry
 docker tag taxi-ingesta gcr.io/$GCP_PROJECT_ID/taxi-ingesta:v1
+
+# Empujar a GCR
+docker push gcr.io/$GCP_PROJECT_ID/taxi-ingesta:v1
 
 # Subir la imagen a Google Container Registry
 gcloud run deploy taxi-ingesta \
@@ -79,7 +81,6 @@ echo "Creando suscripción push '$SUBSCRIPTION_NAME' al tópico '$TOPIC_ID'..."
 gcloud pubsub subscriptions create "$SUBSCRIPTION_NAME" \
   --topic="$TOPIC_NAME" \
   --push-endpoint="$CLOUD_RUN_URL" \
-  --push-auth-level=anonymous \
   --project="$GCP_PROJECT_ID"
 
 echo "Suscripción creada y conectada a Cloud Run. Pub/Sub enviará eventos a $CLOUD_RUN_URL"
