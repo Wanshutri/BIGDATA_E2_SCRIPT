@@ -12,7 +12,6 @@ read -p "Ingrese el nombre del bucket a crear (debe ser único globalmente): " B
 export GCP_USERNAME="$USERNAME"
 export GCP_PASSWORD="$PASSWORD"
 export GCP_PROJECT_ID="$PROJECT_ID"
-export API_KEY="$API_KEY"
 export TOPIC_ID="projects/$GCP_PROJECT_ID/topics/$TOPIC_ID"
 export BUCKET_NAME="$BUCKET_NAME"
 export GCP_REGION="us-central1"
