@@ -1,72 +1,43 @@
-import os
+from fastapi import FastAPI
+from google.cloud import storage, pubsub_v1
+import pandas as pd
 import json
-import requests
-import logging
-from flask import Flask
-from google.cloud import pubsub_v1
-from google.api_core.exceptions import GoogleAPICallError, RetryError
+import os
+from io import BytesIO
 
-# Configuración de logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configura tus variables
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
+PARQUET_FILE = "yellow_tripdata_2022-01.parquet"
+PUBSUB_TOPIC = os.environ.get("TOPIC_ID")
 
-# Inicializamos Flask
-app = Flask(__name__)
+app = FastAPI()
 
-# API Key y configuración
-API_KEY = os.environ.get("API_KEY")
-project_id = os.environ.get("GCP_PROJECT_ID")
-topic_id = os.environ.get("TOPIC_ID")
-
-# Cliente Pub/Sub
+# Inicializa los clientes de GCP
+storage_client = storage.Client()
 publisher = pubsub_v1.PublisherClient()
-topic_path = publisher.topic_path(project_id, topic_id)
 
-# Lista de ciudades a consultar
-CITIES = [
-    "Arica", "Iquique", "Santiago", "Valparaiso",
-    "Rancagua", "Concepcion", "Chillan", "Osorno"
-]
+def leer_parquet_desde_gcs(bucket_name: str, file_name: str) -> pd.DataFrame:
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+    parquet_bytes = blob.download_as_bytes()
+    df = pd.read_parquet(BytesIO(parquet_bytes))
+    return df
 
-def get_weather_data(city):
+def publicar_a_pubsub(data: dict):
+    json_data = json.dumps(data).encode("utf-8")
+    future = publisher.publish(PUBSUB_TOPIC, json_data)
+    return future.result()
+
+@app.get("/")
+def leer_y_publicar():
     try:
-        url = "http://api.weatherapi.com/v1/current.json"
-        params = {
-            "key": API_KEY,
-            "q": city,
-            "aqi": "no"
-        }
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching weather data for {city}: {e}")
-        raise
+        df = leer_parquet_desde_gcs(BUCKET_NAME, PARQUET_FILE)
+        registros = df.to_dict(orient="records")
 
-def publish_to_pubsub(data):
-    try:
-        # Convertimos el diccionario a JSON válido
-        message = json.dumps(data).encode('utf-8')
+        # Envía cada fila como un mensaje individual a Pub/Sub
+        for fila in registros:
+            publicar_a_pubsub(fila)
 
-        # Publicamos el mensaje en Pub/Sub
-        future = publisher.publish(topic_path, message)
-        future.result()
-
-        logger.info(f"Message for {data.get('location', {}).get('name')} published successfully.")
-    except (GoogleAPICallError, RetryError) as e:
-        logger.error(f"Error publishing message to Pub/Sub: {e}")
-        raise
-
-@app.route('/', methods=['POST', 'GET'])
-def main():
-    try:
-        for city in CITIES:
-            weather_data = get_weather_data(city)
-            publish_to_pubsub(weather_data)
-        return 'Success', 200
+        return {"status": "Publicado en Pub/Sub", "filas": len(registros)}
     except Exception as e:
-        logger.error(f"Error in main function: {e}")
-        return f"Error: {e}", 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+        return {"error": str(e)}

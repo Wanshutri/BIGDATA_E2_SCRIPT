@@ -13,7 +13,7 @@ export GCP_USERNAME="$USERNAME"
 export GCP_PASSWORD="$PASSWORD"
 export GCP_PROJECT_ID="$PROJECT_ID"
 export API_KEY="$API_KEY"
-export TOPIC_ID="$TOPIC_ID"
+export TOPIC_ID="projects/$GCP_PROJECT_ID/topics/$TOPIC_ID"
 export BUCKET_NAME="$BUCKET_NAME"
 export GCP_REGION="us-central1"
 
@@ -25,6 +25,7 @@ echo "GCP_PASSWORD=[oculto]"
 echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
 echo "API_KEY=$API_KEY"
 echo "TOPIC_ID=$TOPIC_ID"
+echo "BUCKET_NAME=$BUCKET_NAME"
 echo "GCP_REGION=$GCP_REGION"
 echo "========================================="
 
@@ -37,7 +38,7 @@ gcloud pubsub topics create "$TOPIC_ID" --project="$GCP_PROJECT_ID"
 
 # Construir imagen Docker
 echo "Construyendo imagen Docker..."
-docker build -t weather-api ./container
+docker build -t taxi-ingesta ./container
 
 # Ejecutar contenedor en segundo plano
 echo "Ejecutando contenedor en segundo plano..."
@@ -45,36 +46,16 @@ docker run -d -p 8080:8080 \
   -e API_KEY="$API_KEY" \
   -e GCP_PROJECT_ID="$GCP_PROJECT_ID" \
   -e TOPIC_ID="$TOPIC_ID" \
-  weather-api
+  taxi-ingesta
 
 echo "Contenedor iniciado en segundo plano. Accede en http://localhost:8080"
 
-# Clonar repositorio (si no existe)
-REPO_DIR="java-docs-samples"
+# Etiquetar la imagen para subir a Google Container Registry
+docker tag taxi-ingesta gcr.io/$GCP_PROJECT_ID/taxi-ingesta:v1
 
-if [ ! -d "$REPO_DIR" ]; then
-  echo "Clonando el repositorio de ejemplos de Google Cloud..."
-  git clone https://github.com/GoogleCloudPlatform/java-docs-samples.git
-else
-  echo "Repositorio ya clonado. Usando directorio existente."
-fi
-
-cd java-docs-samples/pubsub/streaming-analytics || {
-  echo "Error: No se encontró el directorio del ejemplo de Pub/Sub."
-  exit 1
-}
-
-# Ejecutar ejemplo con Maven y DataflowRunner
-echo "Ejecutando el pipeline de ejemplo en Dataflow..."
-
-mvn compile exec:java \
-  -Dexec.mainClass=com.examples.pubsub.streaming.PubSubToGcs \
-  -Dexec.cleanupDaemonThreads=false \
-  -Dexec.args=" \
-    --project=$GCP_PROJECT_ID \
-    --region=$GCP_REGION \
-    --inputTopic=projects/$GCP_PROJECT_ID/topics/$TOPIC_ID \
-    --output=gs://$BUCKET_NAME/samples/output \
-    --runner=DataflowRunner \
-    --windowSize=2 \
-    --tempLocation=gs://$BUCKET_NAME/temp"
+# Subir la imagen a Google Container Registry
+gcloud run deploy taxi-ingesta \
+  --image gcr.io/$GCP_PROJECT_ID/taxi-ingesta:v1 \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated
