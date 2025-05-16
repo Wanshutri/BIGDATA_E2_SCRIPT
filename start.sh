@@ -4,7 +4,6 @@
 read -p "Ingrese el Username: " USERNAME
 read -p "Ingrese el Password: " PASSWORD
 read -p "Ingrese el Project ID: " PROJECT_ID
-read -p "Ingrese la API KEY: " API_KEY
 read -p "Ingrese el nombre del Topic de Pub/Sub: " TOPIC_ID
 read -p "Ingrese el nombre del bucket a crear (debe ser único globalmente): " BUCKET_NAME
 
@@ -45,7 +44,6 @@ docker build -t taxi-ingesta ./container
 # Ejecutar contenedor en segundo plano
 echo "Ejecutando contenedor en segundo plano..."
 docker run -d -p 8000:8000 \
-  -e API_KEY="$API_KEY" \
   -e GCP_PROJECT_ID="$GCP_PROJECT_ID" \
   -e TOPIC_ID="$TOPIC_ID" \
   taxi-ingesta
