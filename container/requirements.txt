@@ -1,6 +1,0 @@
-google-cloud-storage
-pandas
-google-cloud-pubsub
-fastapi
-uvicorn
-pyarrow
