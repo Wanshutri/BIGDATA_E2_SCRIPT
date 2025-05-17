@@ -39,8 +39,9 @@ def descargar_convertir_subir():
 def run_job():
     try:
         descargar_convertir_subir()
-        return jsonify({"status": "success", "message": "Archivo descargado y subido correctamente."})
+        return jsonify({"status": "success", "message": "Archivo descargado y subido correctamente."}), 200
     except Exception as e:
+        print(f"Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
