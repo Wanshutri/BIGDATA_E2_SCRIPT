@@ -8,6 +8,10 @@ gcloud run deploy extraer-parquet \
   --source container/. \
   --set-env-vars BUCKET_NAME=$BUCKET_NAME \
   --region us-central1 \
+  --memory 16Gi \
+  --cpu 4 \
+  --max-instances 1 \
+  --min-instances 1 \
   --allow-unauthenticated
 
 # 3. Obtener la URL del servicio desplegado
@@ -17,7 +21,7 @@ echo "URL del servicio: $SERVICE_URL"
 
 # 4. Crear un trigger en Cloud Scheduler que ejecute la app cada un minuto
 gcloud scheduler jobs create http extraer-parquet-job \
-  --schedule="* * * * *" \
+  --schedule="*/10 * * * *" \
   --http-method=GET \
   --uri="$SERVICE_URL" \
   --time-zone="UTC" \
