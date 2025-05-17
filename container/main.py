@@ -2,6 +2,9 @@ import os
 import requests
 import pandas as pd
 from google.cloud import storage
+from flask import Flask, jsonify
+
+app = Flask(__name__)
 
 def subir_a_gcs(bucket_name, destino_blob, contenido):
     storage_client = storage.Client()
@@ -24,7 +27,6 @@ def descargar_convertir_subir():
     df = pd.read_parquet(local_filename)
     json_data = df.to_json(orient="records", lines=True)
 
-    # Obtener el bucket desde variable de entorno
     bucket_name = os.environ.get("BUCKET_NAME")
     destino_blob = "dataprep/yellow_tripdata_2022-01.json"
 
@@ -33,5 +35,19 @@ def descargar_convertir_subir():
 
     subir_a_gcs(bucket_name, destino_blob, json_data)
 
+@app.route('/')
+def index():
+    return "Servicio activo. Usa /runjob para ejecutar la tarea."
+
+@app.route('/runjob')
+def run_job():
+    try:
+        descargar_convertir_subir()
+        return jsonify({"status": "success", "message": "Archivo descargado y subido correctamente."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == "__main__":
-    descargar_convertir_subir()
+    port = int(os.environ.get("PORT", 8080))
+    # Ejecuta el servidor Flask en todas las interfaces, puerto asignado por Cloud Run
+    app.run(host='0.0.0.0', port=port)

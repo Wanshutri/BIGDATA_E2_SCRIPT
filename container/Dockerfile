@@ -10,5 +10,8 @@ COPY . .
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Expone el puerto 8080 para la aplicación
+EXPOSE 8080
+
 # Comando por defecto al iniciar el contenedor
 CMD ["python", "main.py"]

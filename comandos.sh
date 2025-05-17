@@ -15,9 +15,9 @@ SERVICE_URL=$(gcloud run services describe extraer-parquet --region us-central1 
 
 echo "URL del servicio: $SERVICE_URL"
 
-# 4. Crear un trigger en Cloud Scheduler que ejecute la app a las 7:00 UTC todos los días
+# 4. Crear un trigger en Cloud Scheduler que ejecute la app cada un minuto
 gcloud scheduler jobs create http extraer-parquet-job \
-  --schedule="0 7 * * *" \
+  --schedule="* * * * *" \
   --http-method=GET \
   --uri="$SERVICE_URL" \
   --time-zone="UTC"
