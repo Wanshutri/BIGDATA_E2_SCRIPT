@@ -64,7 +64,8 @@ gcloud run deploy taxi-ingesta \
   --image gcr.io/$GCP_PROJECT_ID/taxi-ingesta:v1 \
   --platform managed \
   --region us-central1 \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --set-env-vars TOPIC_ID="$TOPIC_ID",BUCKET_NAME="$BUCKET_NAME"
 
 # Obtener la URL del servicio desplegado
 CLOUD_RUN_URL=$(gcloud run services describe taxi-ingesta \
@@ -80,7 +81,17 @@ echo "Creando suscripción push '$SUBSCRIPTION_NAME' al tópico '$TOPIC_ID'..."
 
 gcloud pubsub subscriptions create "$SUBSCRIPTION_NAME" \
   --topic="$TOPIC_NAME" \
-  --push-endpoint="$CLOUD_RUN_URL" \
   --project="$GCP_PROJECT_ID"
 
 echo "Suscripción creada y conectada a Cloud Run. Pub/Sub enviará eventos a $CLOUD_RUN_URL"
+
+# Mostrar información
+echo "========================================="
+echo "Variables de entorno usadas:"
+echo "GCP_USERNAME=$GCP_USERNAME"
+echo "GCP_PASSWORD=[oculto]"
+echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
+echo "TOPIC_ID=$TOPIC_ID"
+echo "BUCKET_NAME=$BUCKET_NAME"
+echo "GCP_REGION=$GCP_REGION"
+echo "========================================="
