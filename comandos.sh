@@ -20,4 +20,5 @@ gcloud scheduler jobs create http extraer-parquet-job \
   --schedule="* * * * *" \
   --http-method=GET \
   --uri="$SERVICE_URL" \
-  --time-zone="UTC"
+  --time-zone="UTC" \
+  --location=us-central1

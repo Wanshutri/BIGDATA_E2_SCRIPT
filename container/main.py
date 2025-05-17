@@ -36,10 +36,6 @@ def descargar_convertir_subir():
     subir_a_gcs(bucket_name, destino_blob, json_data)
 
 @app.route('/')
-def index():
-    return "Servicio activo. Usa /runjob para ejecutar la tarea."
-
-@app.route('/runjob')
 def run_job():
     try:
         descargar_convertir_subir()
