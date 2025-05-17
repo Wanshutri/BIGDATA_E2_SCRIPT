@@ -19,7 +19,7 @@ gcloud scheduler jobs create pubsub $TRIGGER_NAME \
   --time-zone="America/Santiago" \
   --topic=$TOPIC_NAME \
   --message-body='{"trigger": "start"}' \
-  --region=us-central1
+  --region="us-central1"
 
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
 
