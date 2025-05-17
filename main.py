@@ -5,9 +5,6 @@ import tempfile
 import pyarrow.parquet as pq
 import json
 import os
-import dotenv
-
-dotenv.load_dotenv()
 
 PARQUET_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2016-01.parquet"
 
