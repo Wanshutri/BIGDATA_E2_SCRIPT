@@ -38,13 +38,13 @@ def procesar_siguiente_row_group():
     # 3) Leer el row group idx
     table = parquet_file.read_row_group(idx)
     # 4) Convertir a NDJSON
-    ndjson_bytes = paj.write_json(table, indent=0, use_threads=True).read()
+    df = table.to_pandas()
+    ndjson = df.to_json(orient="records", lines=True)
 
     # 5) Subir a GCS
     destino = f"{GCS_PREFIX}/parte_{idx:03d}.ndjson"
     blob = bucket.blob(destino)
-    blob.upload_from_string(ndjson_bytes.decode("utf-8"),
-                            content_type="application/x-ndjson")
+    blob.upload_from_string(ndjson, content_type="application/x-ndjson")
 
     # 6) Avanzar el puntero
     write_pointer(idx + 1)
